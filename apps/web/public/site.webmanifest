@@ -1,7 +1,7 @@
 {
-    "name": "Cal.diy",
-    "short_name": "Cal.diy",
-    "description": "Scheduling infrastructure for absolutely everyone.",
+    "name": "Agenda Systemlabs",
+    "short_name": "Agenda",
+    "description": "Scheduling infrastructure for Systemlabs.",
     "icons": [
         {
             "src": "/api/logo?type=android-chrome-192",

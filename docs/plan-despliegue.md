@@ -30,7 +30,14 @@ Detalles del workflow:
 
 **Pendiente tras el primer push exitoso:** el paquete en `ghcr.io/cgomezadolfo/cal.diy` nace **privado** por defecto. Hay que ir a Settings del paquete en GitHub y ponerlo **público** (o si se prefiere privado, generar un PAT con `read:packages` y configurarlo como credencial de registry en Dokploy). Público es más simple: Dokploy hace pull anónimo sin credenciales.
 
-Esta es la primera corrida de este workflow — es razonable que necesite 1-2 iteraciones de ajuste si el build falla en CI por algo no documentado en el README de cal.diy.
+**Estado:** el workflow ya corrió con éxito (14m19s) tras 3 ajustes sobre la primera versión:
+1. `/swapfile` ya existe y está activo por defecto en los runners de GitHub → el fallocate fallaba con "Text file busy"; se agregó swap extra en `/mnt/extra-swapfile` en vez de tocar el existente.
+2. `npx prisma` sin versión resolvía la última release (exige Node ≥22) → se pineó a `prisma@6.16.1`, la misma versión que usa el repo (`packages/prisma/package.json`).
+3. Al `schema.prisma` le faltaba `DATABASE_DIRECT_URL` en el env del paso de migración (el schema define `directUrl` además de `url`).
+
+El paquete resultante en `ghcr.io/cgomezadolfo/cal.diy` quedó **público automáticamente** (hereda la visibilidad del repo) — Dokploy puede hacer `pull` sin credenciales.
+
+> Nota: al pushear a esta rama también corren dos workflows heredados de upstream (`i18n.yml`, `release-docker.yaml`) que fallan en 0s por un bug propio de cal.diy (usan `secrets.*` dentro de un `if:` a nivel de job, algo que GitHub Actions no permite ahí). Es ruido inofensivo, no bloquea nada; se puede desactivar más adelante si molesta.
 
 ## Estrategia de fork y actualizaciones
 
@@ -51,7 +58,7 @@ Los updates de upstream **no borran** las customizaciones — se integran con me
 - [x] Pushear rama `agenda` a origin.
 - [x] Crear workflow de GitHub Actions que compila y publica la imagen en `ghcr.io/cgomezadolfo/cal.diy`.
 - [x] Actualizar `docker-compose.dokploy.yml` para usar `image:` (ghcr.io) en vez de `build:`.
-- [ ] Verificar que el workflow corrió OK y hacer público el paquete en `ghcr.io`.
+- [x] Workflow corrió OK (14m19s) y el paquete `ghcr.io/cgomezadolfo/cal.diy` quedó **público** automáticamente (hereda visibilidad del repo). Tags: `latest` y el SHA del commit.
 - [ ] Crear BD `agenda` en el PG de Dokploy.
 - [ ] Crear servicio Compose en Dokploy apuntando a la rama `agenda`.
 - [ ] Configurar dominio `agenda.systemlabs.cl` en Dokploy (HTTP, sin Let's Encrypt).

@@ -104,11 +104,16 @@ Solo el servicio web, sin PG/Redis/API/Prisma-Studio del compose oficial, y sin 
 - Red externa `dokploy-network` (para que Traefik y el PG lo alcancen), expone puerto interno 3000.
 - Valores sensibles como `${VARIABLES}` → se definen en la pestaña Environment de Dokploy, no en el repo.
 
-### 5. Crear el servicio en Dokploy
-- Proyecto **agenda** → servicio tipo **Compose**, source: GitHub `cgomezadolfo/cal.diy`, rama `agenda`, archivo `docker-compose.dokploy.yml`.
+### 5. Crear el servicio en Dokploy — en curso
+Se optó por provider **Docker** (imagen directa) en vez de Compose: es un solo contenedor (sin Redis/API/DB propios), así que Dokploy maneja la red y el proxy solo, sin necesitar `docker-compose.dokploy.yml` para esto (ese archivo queda en el repo como referencia/alternativa, no se está usando).
+- App creada en el proyecto **agenda**, provider **Docker**.
+- **Docker Image**: `ghcr.io/cgomezadolfo/cal.diy:latest` (campo "Docker Image", no "Registry URL"). Registry URL/Username/Password vacíos — el paquete es público.
 - Cargar variables de entorno (ver "Variables de entorno finales" abajo).
-- **Dominio:** `agenda.systemlabs.cl` → puerto contenedor `3000`, **HTTP** (el TLS lo termina Cloudflare; no usar Let's Encrypt, no llegará el challenge por el túnel).
+- **Puerto**: contenedor escucha en `3000`.
+- **Dominio:** `agenda.systemlabs.cl` → puerto `3000`, **HTTP** (el TLS lo termina Cloudflare; no usar Let's Encrypt, no llegará el challenge por el túnel).
+- **Red**: confirmar en Advanced que la app quede en `dokploy-network` para alcanzar el Postgres (`supabasemigracion-postgresmigracion-ahpmxl`).
 - Deploy: como Dokploy solo hace `pull` (no compila), esto debería tardar segundos/minutos, no 20-40 min. Monitorear logs del arranque (migraciones Prisma).
+- **Ver pendiente de auto-redeploy** en la sección "Pendientes conocidos" — con provider Docker, un push a git no dispara redeploy solo.
 
 ## Variables de entorno finales (pegar en el panel Environment de Dokploy)
 
@@ -142,6 +147,7 @@ Verificar en Cloudflare Zero Trust → Tunnels → public hostnames (o `config.y
 3. Reiniciar el contenedor desde Dokploy y verificar que levanta solo (migraciones idempotentes).
 
 ## Pendientes conocidos (post fase 1, anotar como issues)
+- **Auto-redeploy en Dokploy tras cada build.** Elegimos provider **Docker** (imagen) en vez de Compose/Git para la app en Dokploy — Dokploy no vigila el repo de git, solo la imagen. El workflow de GitHub Actions ya recompila y publica `ghcr.io/cgomezadolfo/cal.diy:latest` en cada push a `agenda`, pero **Dokploy no vuelve a hacer pull solo**: hay que apretar "Deploy" a mano cada vez, o buscar el "Deploy Webhook" de la app en Dokploy (normalmente en la pestaña General/Advanced/Deployments) y agregarlo como último step del workflow (`.github/workflows/build-agenda-image.yml`) para que el redeploy sea automático. **Importante no olvidar esto** — quedó pendiente de resolver explícitamente.
 - **SMTP** (`EMAIL_*`): sin esto no salen correos de confirmación de reservas.
 - **VAPID keys** para notificaciones push (opcional).
 - **OAuth Google Calendar / integraciones**: requieren credenciales propias en Google Cloud.

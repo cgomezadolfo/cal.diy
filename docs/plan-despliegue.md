@@ -60,10 +60,10 @@ Los updates de upstream **no borran** las customizaciones — se integran con me
 - [x] Actualizar `docker-compose.dokploy.yml` para usar `image:` (ghcr.io) en vez de `build:`.
 - [x] Workflow corrió OK (14m19s) y el paquete `ghcr.io/cgomezadolfo/cal.diy` quedó **público** automáticamente (hereda visibilidad del repo). Tags: `latest` y el SHA del commit.
 - [x] Crear BD `agenda` en el PG de Dokploy (hostname interno confirmado: `supabasemigracion-postgresmigracion-ahpmxl`, ver sección "Variables de entorno finales" abajo).
-- [ ] Crear servicio Compose en Dokploy apuntando a la rama `agenda`.
-- [ ] Configurar dominio `agenda.systemlabs.cl` en Dokploy (HTTP, sin Let's Encrypt).
-- [ ] Verificar/ajustar túnel de Cloudflare.
-- [ ] Primer arranque, wizard de setup, verificación end-to-end.
+- [x] Crear app en Dokploy (provider Docker, no Compose) apuntando a `ghcr.io/cgomezadolfo/cal.diy:latest`.
+- [x] Configurar dominio `agenda.systemlabs.cl` en Dokploy (HTTP, sin Let's Encrypt).
+- [x] Túnel de Cloudflare — funcionó sin ajustes (ya rutea a Dokploy).
+- [x] Primer arranque, wizard de setup, verificación end-to-end.
 
 > Los secretos generados **no se commitean**. Viven únicamente en el panel de Environment de Dokploy. Si se pierden, se regeneran con `openssl rand -base64 32` / `openssl rand -base64 24` (esto invalida sesiones activas).
 
@@ -151,7 +151,7 @@ Verificar en Cloudflare Zero Trust → Tunnels → public hostnames (o `config.y
 Desplegado y verificado en `https://agenda.systemlabs.cl` el 2026-07-17. Deploy limpio, sin restarts, migraciones OK, admin creado (`admin`). El 502 inicial fue transitorio (Traefik tardó unos segundos en detectar el contenedor nuevo tras el deploy) — no fue necesaria ninguna corrección de red: Dokploy conecta automáticamente todas sus apps/DBs a la misma red interna, sin selector manual.
 
 ## Pendientes conocidos (post fase 1, anotar como issues)
-- **Remanentes de pricing de Cal.com Cloud en el wizard de setup.** El onboarding muestra una opción "para tu equipo" con precio ($15/mes) heredada del código de Cal.com SaaS — no tiene Stripe configurado (no seteamos `STRIPE_API_KEY` ni relacionados) así que no puede cobrar nada, pero confunde. Limpiar/ocultar en fase 2 (branding).
+- ~~Remanentes de pricing de Cal.com Cloud en el wizard de setup~~ — **resuelto** (2026-07-17) desactivando el feature flag `onboarding-v3` en la tabla `Feature` de Postgres (`UPDATE "Feature" SET "enabled" = false WHERE "slug" = 'onboarding-v3'`). Detalle completo en `docs/plan-fase2-branding.md`.
 - **Auto-redeploy en Dokploy tras cada build.** Elegimos provider **Docker** (imagen) en vez de Compose/Git para la app en Dokploy — Dokploy no vigila el repo de git, solo la imagen. El workflow de GitHub Actions ya recompila y publica `ghcr.io/cgomezadolfo/cal.diy:latest` en cada push a `agenda`, pero **Dokploy no vuelve a hacer pull solo**: hay que apretar "Deploy" a mano cada vez, o buscar el "Deploy Webhook" de la app en Dokploy (normalmente en la pestaña General/Advanced/Deployments) y agregarlo como último step del workflow (`.github/workflows/build-agenda-image.yml`) para que el redeploy sea automático. **Importante no olvidar esto** — quedó pendiente de resolver explícitamente.
 - **SMTP** (`EMAIL_*`): sin esto no salen correos de confirmación de reservas.
 - **VAPID keys** para notificaciones push (opcional).

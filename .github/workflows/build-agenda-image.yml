@@ -3,6 +3,9 @@ name: Build and publish agenda image
 on:
   push:
     branches: [agenda]
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
   workflow_dispatch: {}
 
 permissions:

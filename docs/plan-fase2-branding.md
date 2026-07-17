@@ -31,17 +31,17 @@ Decisiones tomadas:
 5. **`apps/web/app/layout.tsx`** / **`apps/web/pages/_document.tsx`** — `msapplication-TileColor`/`application-TileColor` de `#ff0000` a `#111827`; se sacaron los handles de Twitter `@calcom` (no tenemos cuenta propia que poner ahí).
 6. **`packages/i18n/locales/{en,es}/common.json`** — reemplazo mecánico de todas las ocurrencias literales de "Cal.diy" → "Agenda Systemlabs" (34 en inglés, 31 en español; JSON validado después del reemplazo).
 
-## Pendiente: remanente de pricing en el onboarding (heredado de fase 1)
+## Remanente de pricing en el onboarding (heredado de fase 1) — RESUELTO ✅
 
-Ya documentado en `docs/plan-despliegue.md`: el wizard de onboarding-v3 muestra un plan "Team $15/mes" heredado de Cal.com Cloud. El escaneo confirmó que es un **feature flag en la tabla `Feature` de Postgres** (`slug = 'onboarding-v3'`), no algo controlable por env var. Para desactivarlo y volver al flujo legacy `/getting-started` (sin pantalla de precios):
+El wizard de onboarding-v3 mostraba un plan "Team $15/mes" heredado de Cal.com Cloud. Era un **feature flag en la tabla `Feature` de Postgres** (`slug = 'onboarding-v3'`), no controlable por env var. Ejecutado el 2026-07-17 contra la BD `agenda`:
 
 ```sql
 UPDATE "Feature" SET "enabled" = false, "updatedAt" = CURRENT_TIMESTAMP WHERE "slug" = 'onboarding-v3';
 ```
 
-Requiere acceso a la BD `agenda` en Dokploy (mismo Postgres compartido, hostname `supabasemigracion-postgresmigracion-ahpmxl`) — pendiente de ejecutar con el asistente del homelab, igual que se hizo con el `CREATE DATABASE` en fase 1.
+Resultado confirmado por el asistente del homelab: `UPDATE 1`. Esto vuelve al flujo legacy `/getting-started` (sin pantalla de precios) para cualquier usuario nuevo que pase por onboarding.
 
-Alternativa (si en algún momento se prefiere mantener el flujo v3 pero sin el plan de equipo): editar `apps/web/modules/onboarding/getting-started/onboarding-view.tsx` para sacar `team` del array `allPlans` — pero es un cambio de código que hay que re-aplicar en cada merge de upstream, así que el flag de DB es la opción recomendada.
+Alternativa si en algún momento se prefiere mantener el flujo v3 pero sin el plan de equipo: editar `apps/web/modules/onboarding/getting-started/onboarding-view.tsx` para sacar `team` del array `allPlans` — es un cambio de código que habría que re-aplicar en cada merge de upstream, por eso se prefirió el flag de DB.
 
 ## Pendientes conocidos (no bloqueantes)
 
@@ -55,3 +55,5 @@ Alternativa (si en algún momento se prefiere mantener el flujo v3 pero sin el p
 ## Deploy de estos cambios
 
 Mismo flujo que fase 1: push a `agenda` → GitHub Actions recompila y publica `ghcr.io/cgomezadolfo/cal.diy:latest` → **hace falta apretar "Deploy" a mano en Dokploy** (seguimos sin el webhook de auto-redeploy, ver pendiente en `docs/plan-despliegue.md`).
+
+**Estado al cierre de la sesión del 2026-07-17:** build con el branding nuevo corrió OK (14m16s) y se pidió el redeploy en Dokploy. **Falta confirmar visualmente** en la próxima sesión: logo en sidebar/login, favicon de la pestaña del navegador, título de la página, y que el onboarding ya no muestre la pantalla de precios (el flag ya se desactivó, ver arriba). Si algo no se ve bien, probar primero con hard-refresh / ventana de incógnito (favicons se cachean agresivo en el navegador).

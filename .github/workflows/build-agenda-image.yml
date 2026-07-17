@@ -32,13 +32,18 @@ jobs:
 
       # Cal.com's build is memory-hungry (NODE_OPTIONS defaults to
       # --max-old-space-size=6144) and standard runners only have 7GB RAM.
+      # /swapfile already exists and is active on GitHub's runners, so we add
+      # an extra swapfile under a different name instead of touching it.
       - name: Free disk space and add swap
         run: |
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache
-          sudo fallocate -l 8G /swapfile
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
+          free -h
+          swapon --show
+          sudo fallocate -l 8G /mnt/extra-swapfile
+          sudo chmod 600 /mnt/extra-swapfile
+          sudo mkswap /mnt/extra-swapfile
+          sudo swapon /mnt/extra-swapfile
+          free -h
 
       - name: Set up Node
         uses: actions/setup-node@v4

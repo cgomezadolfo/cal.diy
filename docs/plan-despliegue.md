@@ -59,7 +59,7 @@ Los updates de upstream **no borran** las customizaciones — se integran con me
 - [x] Crear workflow de GitHub Actions que compila y publica la imagen en `ghcr.io/cgomezadolfo/cal.diy`.
 - [x] Actualizar `docker-compose.dokploy.yml` para usar `image:` (ghcr.io) en vez de `build:`.
 - [x] Workflow corrió OK (14m19s) y el paquete `ghcr.io/cgomezadolfo/cal.diy` quedó **público** automáticamente (hereda visibilidad del repo). Tags: `latest` y el SHA del commit.
-- [ ] Crear BD `agenda` en el PG de Dokploy.
+- [x] Crear BD `agenda` en el PG de Dokploy (hostname interno confirmado: `supabasemigracion-postgresmigracion-ahpmxl`, ver sección "Variables de entorno finales" abajo).
 - [ ] Crear servicio Compose en Dokploy apuntando a la rama `agenda`.
 - [ ] Configurar dominio `agenda.systemlabs.cl` en Dokploy (HTTP, sin Let's Encrypt).
 - [ ] Verificar/ajustar túnel de Cloudflare.
@@ -82,13 +82,20 @@ openssl rand -base64 32   # NEXTAUTH_SECRET
 openssl rand -base64 24   # CALENDSO_ENCRYPTION_KEY (AES256, 32 bytes)
 ```
 
-### 3. Preparar la base de datos en el PG existente de Dokploy
-Ejecutar en el PG (vía Dokploy o psql):
+### 3. Preparar la base de datos en el PG existente de Dokploy — hecho
 ```sql
 CREATE USER agenda WITH PASSWORD '<password-fuerte>';
 CREATE DATABASE agenda OWNER agenda;
 ```
-Anotar el **hostname interno** del servicio PG en la red `dokploy-network` (nombre del contenedor/servicio en Dokploy) para el `DATABASE_URL`.
+El PG existente en Dokploy es una instancia compartida (nombre del servicio sugiere que se usa también para una migración de Supabase). El hostname interno, en la red `dokploy-network`, es:
+
+```
+supabasemigracion-postgresmigracion-ahpmxl
+```
+
+**Importante:** ese nombre resuelve a una IP interna (`10.0.1.13` al momento de escribir esto) que **ya cambió varias veces** — siempre usar el hostname DNS, nunca hardcodear la IP.
+
+**Requisito verificado:** el servicio `calcom` en `docker-compose.dokploy.yml` ya está en la red `dokploy-network` (`external: true`, sin red propia) — necesario para que resuelva ese hostname. Ver sección "Variables de entorno finales" para el `DATABASE_URL` completo (password redactada en este doc porque el repo es público).
 
 ### 4. Compose específico para Dokploy — hecho (`docker-compose.dokploy.yml`)
 Solo el servicio web, sin PG/Redis/API/Prisma-Studio del compose oficial, y sin `build:` (la imagen ya viene compilada de `ghcr.io`, ver "Estrategia de build" arriba):
@@ -99,9 +106,25 @@ Solo el servicio web, sin PG/Redis/API/Prisma-Studio del compose oficial, y sin 
 
 ### 5. Crear el servicio en Dokploy
 - Proyecto **agenda** → servicio tipo **Compose**, source: GitHub `cgomezadolfo/cal.diy`, rama `agenda`, archivo `docker-compose.dokploy.yml`.
-- Cargar variables de entorno (secretos del paso 2, DATABASE_URL del paso 3).
+- Cargar variables de entorno (ver "Variables de entorno finales" abajo).
 - **Dominio:** `agenda.systemlabs.cl` → puerto contenedor `3000`, **HTTP** (el TLS lo termina Cloudflare; no usar Let's Encrypt, no llegará el challenge por el túnel).
 - Deploy: como Dokploy solo hace `pull` (no compila), esto debería tardar segundos/minutos, no 20-40 min. Monitorear logs del arranque (migraciones Prisma).
+
+## Variables de entorno finales (pegar en el panel Environment de Dokploy)
+
+**No committear este bloque con los valores reales** — este repo es público. Los valores reales (password de la BD, secretos) viven solo en Dokploy.
+
+```
+DATABASE_URL=postgresql://agenda:<password>@supabasemigracion-postgresmigracion-ahpmxl:5432/agenda
+DATABASE_DIRECT_URL=postgresql://agenda:<password>@supabasemigracion-postgresmigracion-ahpmxl:5432/agenda
+NEXTAUTH_URL=https://agenda.systemlabs.cl
+NEXT_PUBLIC_WEBAPP_URL=https://agenda.systemlabs.cl
+NEXTAUTH_SECRET=<generado con openssl rand -base64 32>
+CALENDSO_ENCRYPTION_KEY=<generado con openssl rand -base64 24>
+CALCOM_TELEMETRY_DISABLED=1
+```
+
+La password de la BD y los dos secretos se generaron/confirmaron durante esta sesión de despliegue (no se guardan en el repo ni en este doc).
 
 ### 6. Túnel de Cloudflare
 Verificar en Cloudflare Zero Trust → Tunnels → public hostnames (o `config.yml` de cloudflared):

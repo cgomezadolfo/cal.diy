@@ -146,7 +146,12 @@ Verificar en Cloudflare Zero Trust → Tunnels → public hostnames (o `config.y
 2. Login con el admin creado, crear un event type, hacer una reserva de prueba y confirmar que aparece en el dashboard.
 3. Reiniciar el contenedor desde Dokploy y verificar que levanta solo (migraciones idempotentes).
 
+## Fase 1: COMPLETA ✅
+
+Desplegado y verificado en `https://agenda.systemlabs.cl` el 2026-07-17. Deploy limpio, sin restarts, migraciones OK, admin creado (`admin`). El 502 inicial fue transitorio (Traefik tardó unos segundos en detectar el contenedor nuevo tras el deploy) — no fue necesaria ninguna corrección de red: Dokploy conecta automáticamente todas sus apps/DBs a la misma red interna, sin selector manual.
+
 ## Pendientes conocidos (post fase 1, anotar como issues)
+- **Remanentes de pricing de Cal.com Cloud en el wizard de setup.** El onboarding muestra una opción "para tu equipo" con precio ($15/mes) heredada del código de Cal.com SaaS — no tiene Stripe configurado (no seteamos `STRIPE_API_KEY` ni relacionados) así que no puede cobrar nada, pero confunde. Limpiar/ocultar en fase 2 (branding).
 - **Auto-redeploy en Dokploy tras cada build.** Elegimos provider **Docker** (imagen) en vez de Compose/Git para la app en Dokploy — Dokploy no vigila el repo de git, solo la imagen. El workflow de GitHub Actions ya recompila y publica `ghcr.io/cgomezadolfo/cal.diy:latest` en cada push a `agenda`, pero **Dokploy no vuelve a hacer pull solo**: hay que apretar "Deploy" a mano cada vez, o buscar el "Deploy Webhook" de la app en Dokploy (normalmente en la pestaña General/Advanced/Deployments) y agregarlo como último step del workflow (`.github/workflows/build-agenda-image.yml`) para que el redeploy sea automático. **Importante no olvidar esto** — quedó pendiente de resolver explícitamente.
 - **SMTP** (`EMAIL_*`): sin esto no salen correos de confirmación de reservas.
 - **VAPID keys** para notificaciones push (opcional).

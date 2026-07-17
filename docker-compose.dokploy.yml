@@ -1,0 +1,38 @@
+# Compose para despliegue en Dokploy (proyecto "agenda").
+#
+# Difiere del docker-compose.yml oficial en que:
+#   - No trae su propio Postgres/Redis: usa el Postgres ya alojado en Dokploy.
+#   - No incluye el servicio calcom-api ni prisma studio (no se usan en fase 1).
+#   - Se conecta a la red externa de Dokploy en vez de crear una red propia.
+#
+# Todas las variables se cargan desde el panel de Environment de Dokploy
+# (ver docs/plan-despliegue.md). Nada sensible vive en este archivo.
+
+networks:
+  dokploy-network:
+    external: true
+
+services:
+  calcom:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_WEBAPP_URL: ${NEXT_PUBLIC_WEBAPP_URL}
+        NEXT_PUBLIC_LICENSE_CONSENT: ${NEXT_PUBLIC_LICENSE_CONSENT}
+        CALCOM_TELEMETRY_DISABLED: ${CALCOM_TELEMETRY_DISABLED}
+        NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+        CALENDSO_ENCRYPTION_KEY: ${CALENDSO_ENCRYPTION_KEY}
+        DATABASE_URL: ${DATABASE_URL}
+        DATABASE_DIRECT_URL: ${DATABASE_URL}
+    restart: always
+    networks:
+      - dokploy-network
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_DIRECT_URL=${DATABASE_URL}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - NEXT_PUBLIC_WEBAPP_URL=${NEXT_PUBLIC_WEBAPP_URL}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - CALENDSO_ENCRYPTION_KEY=${CALENDSO_ENCRYPTION_KEY}
+      - CALCOM_TELEMETRY_DISABLED=${CALCOM_TELEMETRY_DISABLED}

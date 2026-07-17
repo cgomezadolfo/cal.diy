@@ -55,6 +55,7 @@ jobs:
         run: npx --yes prisma@6.16.1 migrate deploy --schema packages/prisma/schema.prisma
         env:
           DATABASE_URL: postgresql://build:build@localhost:5432/build
+          DATABASE_DIRECT_URL: postgresql://build:build@localhost:5432/build
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

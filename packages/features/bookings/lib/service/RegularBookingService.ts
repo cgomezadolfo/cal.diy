@@ -2071,7 +2071,14 @@ async function handler(
         `EventManager.create failure in some of the integrations ${organizerUser.username}`,
         safeStringify({ error, results })
       );
-    } else {
+    }
+    // Confirmation emails must still go out even when every conferencing/calendar
+    // integration failed (e.g. no video app configured) - the booking itself was
+    // created successfully, and the integration failure is reported separately via
+    // sendBrokenIntegrationEmail. Previously this was nested in an `else` here, which
+    // silently skipped emailing the organizer and all attendees whenever the only
+    // integration result (typically video) failed.
+    {
       const additionalInformation: AdditionalInformation = {};
 
       if (results.length) {

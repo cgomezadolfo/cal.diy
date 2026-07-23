@@ -633,8 +633,7 @@ async function handler(
   }
 
   const fullName = getFullName(bookerName);
-  // Why are we only using "en" locale
-  const tGuests = await getTranslation("en", "common");
+  const tGuests = await getTranslation(language ?? "en", "common");
 
   const dynamicUserList = Array.isArray(reqBody.user) ? reqBody.user : getUsernameList(reqBody.user);
   if (!eventType)
@@ -1255,7 +1254,7 @@ async function handler(
       firstName: "",
       lastName: "",
       timeZone: attendeeTimezone,
-      language: { translate: tGuests, locale: "en" },
+      language: { translate: tGuests, locale: attendeeLanguage ?? "en" },
     });
     return guestArray;
   }, [] as Invitee);

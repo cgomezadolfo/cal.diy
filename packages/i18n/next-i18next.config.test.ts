@@ -8,9 +8,12 @@ const config = require("./next-i18next.config");
 describe("@calcom/i18n/next-i18next.config", () => {
   it("exports i18n with defaultLocale and locales", () => {
     expect(config.i18n).toBeDefined();
-    expect(config.i18n.defaultLocale).toBe("en");
+    // This deployment defaults to Spanish (self-hosted for Chile), independent of
+    // i18n.json's locale.source, which stays "en" for the lingo.dev translation pipeline.
+    expect(config.i18n.defaultLocale).toBe("es");
     expect(Array.isArray(config.i18n.locales)).toBe(true);
     expect(config.i18n.locales).toContain("en");
+    expect(config.i18n.locales).toContain("es");
   });
 
   it("includes all target locales from i18n.json plus the source locale", () => {
@@ -29,7 +32,7 @@ describe("@calcom/i18n/next-i18next.config", () => {
 
   it("has fallbackLng configured", () => {
     expect(config.fallbackLng).toBeDefined();
-    expect(config.fallbackLng.default).toEqual(["en"]);
+    expect(config.fallbackLng.default).toEqual(["es"]);
     expect(config.fallbackLng.zh).toEqual(["zh-CN"]);
   });
 

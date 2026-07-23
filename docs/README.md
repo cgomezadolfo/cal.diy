@@ -11,15 +11,17 @@ Fork de [cal.diy](https://github.com/calcom/cal.diy) (Cal.com sin código enterp
 - **[plan-fase3-comunicaciones-meet.md](./plan-fase3-comunicaciones-meet.md)** — Fase 3: correos transaccionales (SMTP) y Google Meet/Calendar como ubicación de reunión, más el rename de "Cal Video" → "Reunión online".
 - **[plan-fase4-pagos-mercadopago.md](./plan-fase4-pagos-mercadopago.md)** — Fase 4 (planificada, no ejecutada): pagos por reserva vía Mercado Pago, modelo "cada prestador conecta su propia cuenta". Incluye el hallazgo de que la página de pago está rota hoy (para cualquier pasarela) y el diseño completo de la integración.
 
-## Estado al cierre de la sesión 2026-07-21
+## Estado al cierre de la sesión 2026-07-23
 
 - ✅ **Fase 1 completa**: `agenda.systemlabs.cl` en producción, deploy limpio, admin creado.
 - ✅ **Fase 2 completa**: branding "Agenda Systemlabs" aplicado y confirmado visualmente en producción (logo, favicon, título, sin pantalla de $15/mes).
 - 🔧 **Fase 3 en curso**:
-  - Rename "Cal Video" → "Reunión online" + otros branding leaks encontrados al probar el flujo real (login, página 404) — commiteados, build de CI OK. **Falta confirmar que se dio Deploy en Dokploy.**
-  - SMTP con Resend configurado, dominio verificado (confirmado por logs: un 403 "domain not verified" en el primer test, 200 OK en el segundo). **Primer paso de mañana**: confirmar en el log de Resend si el correo de confirmación al invitado (Gmail) se envió — los dos logs que se revisaron hoy eran en realidad el correo de "problema al agregar enlace de video" (solo va al organizador), no la confirmación real. Detalle en `plan-fase3-comunicaciones-meet.md`.
-  - Google Calendar/Meet: no iniciado, pasos ya documentados.
+  - Rename "Cal Video" → "Reunión online" + otros branding leaks (login, 404) — commiteados, build OK.
+  - SMTP con Resend configurado y funcionando (dominio verificado).
+  - **Bug grande arreglado**: la reserva no mandaba correo de confirmación a nadie cuando fallaba una integración (video/calendario) — encontrado probando el flujo real, arreglado y confirmado con una reserva de prueba.
+  - **Bug de idioma parcialmente arreglado**: invitados ya no deberían caer a inglés por defecto, pero una prueba post-fix seguía en inglés — sin resolver todavía si fue por falta de Deploy o por el idioma real del navegador de prueba (ver `plan-fase3-comunicaciones-meet.md`, incluye una decisión de producto pendiente: ¿forzar español siempre?).
   - Falta setear `NEXT_PUBLIC_WEBSITE_URL=https://agenda.systemlabs.cl` en Dokploy.
+  - Google Calendar/Meet: no iniciado, pasos ya documentados.
 - 📋 **Fase 4 documentada, no iniciada**: pagos por reserva vía Mercado Pago. Se encontró que la página `/payment/[uid]` está con el cargador de datos stubbeado (ni PayPal funciona hoy) — es la primera tarea de esa fase, sin importar la pasarela. Diseño completo en `plan-fase4-pagos-mercadopago.md`, a la espera de que el usuario tenga cuenta de Mercado Pago para probar.
 
 ## Pendientes abiertos (no bloqueantes, ver detalle en cada doc)
@@ -33,8 +35,8 @@ Fork de [cal.diy](https://github.com/calcom/cal.diy) (Cal.com sin código enterp
 | Color de acento de la app (`--cal-brand*`, sin definir aún) | `plan-fase2-branding.md` |
 | Idiomas más allá de en/es (mismo patrón de strings hardcodeados) | `plan-fase2-branding.md` |
 | Limpieza de `WEBSITE_URL` (sigue apuntando a cal.com en algunos lugares) | `plan-fase2-branding.md` |
-| Confirmar entrega del correo de confirmación al invitado (Gmail) | `plan-fase3-comunicaciones-meet.md` |
-| Confirmar Deploy en Dokploy de los últimos 2 commits de branding | `plan-fase3-comunicaciones-meet.md` |
+| Resolver por qué el invitado sigue recibiendo el correo en inglés (falta Deploy, o es el idioma real del navegador) | `plan-fase3-comunicaciones-meet.md` |
+| Decisión de producto: ¿forzar español siempre en confirmaciones, o respetar idioma del navegador del paciente? | `plan-fase3-comunicaciones-meet.md` |
 | Setear `NEXT_PUBLIC_WEBSITE_URL` en Dokploy | `plan-fase3-comunicaciones-meet.md` |
 | Proyecto de Google Cloud Console + `GOOGLE_API_CREDENTIALS` | `plan-fase3-comunicaciones-meet.md` |
 | Restaurar loader de `/payment/[uid]` (bloquea todos los pagos) | `plan-fase4-pagos-mercadopago.md` |

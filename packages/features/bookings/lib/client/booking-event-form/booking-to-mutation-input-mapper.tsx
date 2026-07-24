@@ -1,11 +1,15 @@
-import { v4 as uuidv4 } from "uuid";
-
 import dayjs from "@calcom/dayjs";
 import { isBookingDryRun } from "@calcom/features/bookings/Booker/utils/isBookingDryRun";
 import { getRoutedTeamMemberIdsFromSearchParams } from "@calcom/lib/bookings/getRoutedTeamMemberIdsFromSearchParams";
 import { parseRecurringDates } from "@calcom/lib/parse-dates";
+import { v4 as uuidv4 } from "uuid";
 import type { BookerEvent, BookingCreateBody, RecurringBookingCreateBody } from "../../../types";
 import type { Tracking } from "../../handleNewBooking/types";
+
+// Product decision: this instance serves patients in Chile, so booking
+// confirmations always go out in Spanish regardless of the visitor's
+// browser language.
+const FORCED_BOOKING_LANGUAGE = "es";
 
 export type BookingOptions = {
   values: Record<string, unknown>;
@@ -38,7 +42,6 @@ export const mapBookingToMutationInput = ({
   date,
   duration,
   timeZone,
-  language,
   rescheduleUid,
   rescheduledBy,
   username,
@@ -72,7 +75,7 @@ export const mapBookingToMutationInput = ({
     eventTypeId: event.id,
     eventTypeSlug: event.slug,
     timeZone: timeZone,
-    language: language,
+    language: FORCED_BOOKING_LANGUAGE,
     rescheduleUid,
     rescheduledBy,
     metadata: metadata || {},
